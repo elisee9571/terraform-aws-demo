@@ -7,7 +7,7 @@ locals {
 
   common_tags = {
     Environment = "${var.env}"
-    Owner = "${var.owner}"
+    Owner       = "${var.owner}"
   }
 }
 
@@ -58,7 +58,7 @@ resource "aws_route_table_association" "public" {
 }
 
 resource "aws_security_group" "allow_tls" {
-  name = "${local.project_name_prefix}-allow_tls"
+  name   = "${local.project_name_prefix}-allow_tls"
   vpc_id = aws_vpc.main.id
 
   ingress {

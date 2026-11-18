@@ -1,6 +1,6 @@
 module "networking" {
   source = "../../modules/networking"
 
-  env = "staging"
+  env          = "staging"
   project_name = var.project_name
 }
