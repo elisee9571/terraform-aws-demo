@@ -1,3 +1,3 @@
 data "docker_registry_image" "nginx" {
-  name = "nginx:latest"
+  name = "elisee9571/demo-nginx-terraform:1.0"
 }
