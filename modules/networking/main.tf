@@ -5,6 +5,8 @@ provider "aws" {
 locals {
   project_name_prefix = "${var.env}-${var.project_name}"
 
+  ssk_key_path = "${path.cwd}/keys/authorized_key"
+
   common_tags = {
     Environment = "${var.env}"
     Owner       = "${var.owner}"
@@ -87,11 +89,38 @@ resource "aws_security_group" "allow_tls" {
   })
 }
 
+# ssh-keygen -t rsa -b 4096 -f ~/.ssh/authorized_key
+# chmod 400 ~/.ssh/authorized_key
+resource "aws_key_pair" "authorized_key" {
+  key_name   = "authorized_key"
+  public_key = file("${local.ssk_key_path}.pub")
+}
+
 resource "aws_instance" "demo" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = lookup(var.instance_types, var.env, "t3.micro")
-  vpc_security_group_ids = [aws_security_group.allow_tls.id]
-  subnet_id              = aws_subnet.public.id
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = lookup(var.instance_types, var.env, "t3.micro")
+  vpc_security_group_ids      = [aws_security_group.allow_tls.id]
+  subnet_id                   = aws_subnet.public.id
+  key_name                    = aws_key_pair.authorized_key.key_name
+  associate_public_ip_address = true
+
+  # ssh -i ~/.ssh/authorized_key ubuntu@public_ip
+  connection {
+    type        = "ssh"
+    user        = "ubuntu"
+    host        = self.public_ip
+    private_key = file("${local.ssk_key_path}")
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo apt-get update -y",
+      "sudo apt-get install -y docker.io",
+      "sudo systemctl start docker",
+      "sudo systemctl enable docker",
+      "sudo usermod -aG docker ubuntu"
+    ]
+  }
 
   tags = merge(local.common_tags, {
     Name = "${local.project_name_prefix}-instance"
