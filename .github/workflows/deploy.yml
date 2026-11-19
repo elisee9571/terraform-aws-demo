@@ -26,6 +26,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
+      - name: Setup SSH KEY
+        run: |
+          mkdir -p keys
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > keys/authorized_key.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > keys/authorized_key
+          chmod 400 keys/authorized_key
+        working-directory: ${{ env.WORKDIR }}
+      
       - name: Setup terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -35,7 +43,6 @@ jobs:
 
       - name: Format
         run: terraform fmt -recursive -check
-        working-directory: ${{ env.WORKDIR }}
 
       - name: Validate
         run: terraform validate
